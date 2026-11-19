@@ -1,4 +1,4 @@
-"""Small SQLite data layer; no external database server is required."""
+"""Small SQLite data layer with additive, non-destructive schema migrations."""
 
 from __future__ import annotations
 
@@ -30,8 +30,25 @@ def database_connection() -> Iterator[sqlite3.Connection]:
         connection.close()
 
 
+def _ensure_columns(
+    connection: sqlite3.Connection,
+    table_name: str,
+    columns: dict[str, str],
+) -> None:
+    """Add missing columns without dropping or rebuilding existing user tables."""
+    existing = {
+        row["name"]
+        for row in connection.execute(f"PRAGMA table_info({table_name})").fetchall()
+    }
+    for column_name, declaration in columns.items():
+        if column_name not in existing:
+            connection.execute(
+                f"ALTER TABLE {table_name} ADD COLUMN {column_name} {declaration}"
+            )
+
+
 def initialize_database() -> None:
-    """Create new tables without changing or deleting existing source records."""
+    """Create new tables and safely upgrade databases from earlier milestones."""
     with database_connection() as connection:
         connection.executescript(
             """
@@ -140,4 +157,76 @@ def initialize_database() -> None:
             CREATE INDEX IF NOT EXISTS idx_youtube_publications_status
                 ON youtube_publications(status, updated_at DESC);
             """
+        )
+
+        # Milestone 1 databases predate some of the source-library fields. Existing
+        # videos remain available, but missing rights history is deliberately NOT
+        # assumed: the user must explicitly reconfirm rights before processing.
+        _ensure_columns(
+            connection,
+            "sources",
+            {
+                "source_type": "TEXT NOT NULL DEFAULT 'upload'",
+                "rights_confirmed": "INTEGER NOT NULL DEFAULT 0 CHECK (rights_confirmed IN (0, 1))",
+                "validation_status": "TEXT NOT NULL DEFAULT 'legacy_unverified'",
+                "duration_seconds": "REAL",
+                "width": "INTEGER",
+                "height": "INTEGER",
+                "video_codec": "TEXT",
+                "error_message": "TEXT",
+            },
+        )
+        _ensure_columns(
+            connection,
+            "jobs",
+            {
+                "job_type": "TEXT NOT NULL DEFAULT 'INGESTION'",
+                "updated_at": "TEXT",
+                "error_message": "TEXT",
+            },
+        )
+        _ensure_columns(
+            connection,
+            "analyses",
+            {
+                "stage": "TEXT NOT NULL DEFAULT 'queued'",
+                "progress": "INTEGER NOT NULL DEFAULT 0",
+                "message": "TEXT",
+                "model_name": "TEXT",
+                "language": "TEXT",
+                "result_json": "TEXT",
+                "error_message": "TEXT",
+                "updated_at": "TEXT",
+            },
+        )
+        _ensure_columns(
+            connection,
+            "clips",
+            {
+                "title": "TEXT NOT NULL DEFAULT 'Untitled highlight'",
+                "start_seconds": "REAL NOT NULL DEFAULT 0",
+                "end_seconds": "REAL NOT NULL DEFAULT 0",
+                "duration_seconds": "REAL NOT NULL DEFAULT 0",
+                "score": "INTEGER NOT NULL DEFAULT 0",
+                "status": "TEXT NOT NULL DEFAULT 'FAILED'",
+                "output_filename": "TEXT",
+                "storage_path": "TEXT",
+                "width": "INTEGER",
+                "height": "INTEGER",
+                "video_codec": "TEXT",
+                "subtitle_status": "TEXT",
+                "error_message": "TEXT",
+                "updated_at": "TEXT",
+            },
+        )
+
+        # Backfill timestamps for rows from schemas that did not track updates.
+        connection.execute(
+            "UPDATE jobs SET updated_at = COALESCE(updated_at, created_at, datetime('now'))"
+        )
+        connection.execute(
+            "UPDATE analyses SET updated_at = COALESCE(updated_at, created_at, datetime('now'))"
+        )
+        connection.execute(
+            "UPDATE clips SET updated_at = COALESCE(updated_at, created_at, datetime('now'))"
         )
