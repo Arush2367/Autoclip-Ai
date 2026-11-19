@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse
 
 from backend.api.analysis import router as analysis_router
 from backend.api.clips import router as clips_router
+from backend.api.meta import router as meta_router
 from backend.api.sources import router as sources_router
 from backend.api.youtube import router as youtube_router
 from backend.config import PROJECT_ROOT, STORAGE_ROOT, MAX_UPLOAD_MB
@@ -15,8 +16,11 @@ from backend.database.database import database_connection, initialize_database
 
 app = FastAPI(
     title="AutoClips AI",
-    version="0.4.0",
-    description="Local-first video ingestion, AI analysis, vertical clip rendering and user-approved YouTube publishing.",
+    version="0.5.0",
+    description=(
+        "Local-first video ingestion, AI analysis, vertical clip rendering, "
+        "YouTube publishing, and prepared Instagram/Facebook Reels integration."
+    ),
 )
 
 
@@ -43,6 +47,12 @@ def startup() -> None:
                updated_at = datetime('now')
                WHERE status IN ('QUEUED', 'UPLOADING')"""
         )
+        connection.execute(
+            """UPDATE meta_publications SET status = 'INTERRUPTED',
+               error_message = 'The app stopped during Meta publishing. Check the destination before retrying.',
+               updated_at = datetime('now')
+               WHERE status IN ('QUEUED', 'UPLOADING', 'PROCESSING')"""
+        )
 
 
 @app.get("/api/v1/health", tags=["system"])
@@ -67,12 +77,28 @@ def stylesheet():
     return FileResponse(PROJECT_ROOT / "frontend" / "style.css", media_type="text/css")
 
 
+@app.get("/meta-publishing.css", include_in_schema=False)
+def meta_stylesheet():
+    return FileResponse(
+        PROJECT_ROOT / "frontend" / "meta-publishing.css", media_type="text/css"
+    )
+
+
 @app.get("/app.js", include_in_schema=False)
 def javascript():
     return FileResponse(PROJECT_ROOT / "frontend" / "app.js", media_type="application/javascript")
+
+
+@app.get("/meta-publishing.js", include_in_schema=False)
+def meta_javascript():
+    return FileResponse(
+        PROJECT_ROOT / "frontend" / "meta-publishing.js",
+        media_type="application/javascript",
+    )
 
 
 app.include_router(sources_router)
 app.include_router(analysis_router)
 app.include_router(clips_router)
 app.include_router(youtube_router)
+app.include_router(meta_router)

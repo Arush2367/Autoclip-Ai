@@ -1,0 +1,16 @@
+.meta-publishing-panel { margin-top: 18px; }
+.meta-publishing-intro { max-width: 720px; margin: 0 0 16px; color: var(--muted); font-size: 11px; line-height: 1.7; }
+.meta-platform-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.meta-platform-card { min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 11px; background: #0d1218; }
+.meta-platform-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.meta-platform-name { margin: 0; font-size: 13px; font-weight: 700; }
+.meta-platform-state { padding: 5px 7px; border-radius: 20px; background: #292a21; color: #e4d59b; font: 9px Consolas, 'Courier New', monospace; white-space: nowrap; }
+.meta-platform-state.connected { background: #1c3329; color: var(--accent); }
+.meta-platform-detail { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; }
+.meta-integration-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line); }
+.meta-integration-message { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.meta-refresh-button { flex: 0 0 auto; }
+@media (max-width: 600px) {
+    .meta-platform-grid { grid-template-columns: 1fr; }
+    .meta-integration-footer { align-items: flex-start; flex-direction: column; }
+}
