@@ -1,0 +1,24 @@
+AUTOCLIPS AI — MILESTONE 2.1 UPDATE
+
+Purpose:
+- Prevent selected highlight clips from sharing any source footage.
+- Make the overlap policy explicit in the analysis result.
+- Add a regression test for non-overlapping selected highlights.
+
+Install:
+1. Stop AutoClips AI with CTRL+C.
+2. Extract this update into the existing AutoClips-AI project folder.
+3. Allow backend/services/highlight_selection.py and tests/test_analysis.py to be replaced.
+4. Do not delete or replace .venv, storage, or the SQLite database.
+5. Run the tests:
+   .\.venv\Scripts\python.exe -m unittest discover -s tests -v
+6. Restart:
+   .\run_windows.bat
+7. Re-run Analyze video on the same 97-second authorized source.
+
+Expected:
+- Candidate clips are strictly non-overlapping (adjacent boundaries are allowed).
+- The analysis result includes overlap_policy: strict_non_overlapping.
+- Fewer than three selected clips may be returned if the source does not contain enough separate eligible windows.
+
+This update does not change Whisper, PyAV, FFmpeg, FFprobe, scene detection, storage, or database schemas.

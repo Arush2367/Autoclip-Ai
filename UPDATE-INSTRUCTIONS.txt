@@ -1,0 +1,27 @@
+AUTOCLIPS AI - MILESTONE 2 UPDATE
+
+1. Stop the running AutoClips server with CTRL+C.
+2. Extract this ZIP directly into your existing project root:
+   C:\Autoclip ai\AutoClips-AI-Milestone-1
+3. Allow Windows to merge folders and replace the code files when asked.
+4. DO NOT delete or replace your existing storage folder or .venv folder.
+   Your uploaded videos and SQLite database stay in storage\.
+5. Double-click setup_windows.bat and let it install the new Python packages.
+6. Double-click run_windows.bat.
+7. Open http://127.0.0.1:8000 and check the footer says AI PACKAGES READY.
+8. Run this in another PowerShell terminal from the project root:
+   Invoke-RestMethod http://127.0.0.1:8000/api/v1/analysis/capabilities | Format-List
+9. Click Analyze video next to an existing source.
+
+The first analysis downloads the free Faster-Whisper base model once into
+storage\models\. Keep internet access on for that first model download.
+
+The analysis pipeline uses CPU int8 by default. It does not use a paid API.
+
+The 12.4-second test video can verify transcription, scene detection and the
+metadata refresh. It cannot produce a 30-40-second highlight because it is too
+short. Use a longer video you own or are licensed to process to test ranking.
+
+Ponytail: see PONYTAIL_SETUP.md and AGENTS.md. The AGENTS file adds project-level
+coding guidance for compatible coding agents; it does not install the full
+external plugin into ChatGPT.

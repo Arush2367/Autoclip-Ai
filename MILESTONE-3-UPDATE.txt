@@ -1,0 +1,45 @@
+AUTOCLIPS AI — MILESTONE 3 UPDATE
+================================
+
+This is an additive update for the existing AutoClips AI project.
+It adds local rendering of selected 30-40 second highlight candidates.
+
+INSTALL
+1. Stop the running app with CTRL+C.
+2. Extract this ZIP into the existing AutoClips-AI-Milestone-1 project folder.
+3. Allow the included application files to be replaced.
+4. Do NOT delete storage/, .venv/, the SQLite database, uploaded source files,
+   or the cached Whisper model.
+5. No new Python packages are required. The renderer uses existing FFmpeg
+   and FFprobe installations.
+6. Run .\run_windows.bat and open http://127.0.0.1:8000.
+
+USE
+1. Open a completed video analysis in the dashboard.
+2. Click "Generate N vertical clips".
+3. Keep the local app running until each clip is COMPLETED or FAILED.
+4. Preview generated clips in the dashboard or use Download MP4.
+
+OUTPUT
+- MP4 container
+- H.264 video, 1080 x 1920, 30 FPS, yuv420p
+- AAC audio at 128 kbps / 48 kHz when the source has audio
+- One-pass loudness normalization when source audio exists
+- Transcript subtitles burned in when transcript segments are available
+- Source timestamps and candidate scores retained in the local database
+- Files stored in storage/clips/
+
+SAFETY / LIMITATIONS
+- This local build only renders source videos that passed the rights-confirmation check.
+  It does not upload or publish anything to social platforms.
+- Landscape sources are center-cropped to fill 9:16. Face/speaker tracking and
+  smart reframing are not included in this milestone.
+- Subtitles use transcript segment timestamps. Word-level highlighting and manual
+  subtitle editing are not included.
+- Keep the application running during renders. If it closes, interrupted clip
+  jobs are marked FAILED at next startup and can be retried from the dashboard.
+- Do not expose the local development server to the public internet.
+
+TEST
+From PowerShell in the project root:
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v

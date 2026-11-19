@@ -1,0 +1,14 @@
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+python-multipart>=0.0.9
+faster-whisper>=1.1.1,<2.0
+# Faster-Whisper 1.2.1 still passes metadata_errors to av.open(); PyAV 19 removed it.
+# Keep PyAV on the compatible 18.x line until Faster-Whisper ships its upstream fix.
+av==18.1.0
+scenedetect>=0.7,<0.8
+
+# Official YouTube Data API v3 OAuth and resumable uploads.
+google-api-python-client>=2.150,<3
+google-auth-oauthlib>=1.2,<2
+google-auth-httplib2>=0.2,<1
+pydantic>=2.7,<3

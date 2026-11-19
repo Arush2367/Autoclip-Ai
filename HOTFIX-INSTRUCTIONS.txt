@@ -1,0 +1,25 @@
+AUTOCLIPS AI - MILESTONE 2 HOTFIX (PyAV / Faster-Whisper)
+
+Cause:
+Faster-Whisper 1.2.1 passes metadata_errors to av.open(). PyAV 19 removed
+that argument, so transcription fails with:
+  open() got an unexpected keyword argument 'metadata_errors'
+
+Fix:
+Pin PyAV to 18.1.0, which remains compatible with the current Faster-Whisper
+release used by this project.
+
+Apply:
+1. Stop the AutoClips AI server with CTRL+C.
+2. Extract this ZIP into the existing project root:
+   C:\Autoclip ai\AutoClips-AI-Milestone-1
+3. Allow requirements.txt to be replaced. Do not delete .venv or storage.
+4. Double-click apply_pyav_hotfix.bat.
+5. Confirm it prints PyAV version: 18.1.0 and that pip check reports no broken
+   requirements.
+6. Start the app again with run_windows.bat.
+7. In the dashboard, click Analyze video again for the same source. The failed
+   analysis record can remain in history; the app creates a fresh job.
+
+The hotfix does not delete uploaded videos, the SQLite database, model cache,
+or generated files.

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Local-first video ingestion dashboard for AutoClips AI.">
+    <title>AutoClips AI — Video Intake</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <main class="shell">
+        <header class="topbar">
+            <a class="brand" href="/" aria-label="AutoClips AI home">
+                <span class="brand-mark">A</span>
+                <span>AutoClips <b>AI</b></span>
+            </a>
+            <div class="local-indicator"><span class="dot"></span> LOCAL DEVELOPMENT</div>
+        </header>
+
+        <section class="hero">
+            <p class="eyebrow">MILESTONE 03 / AUTOMATIC CLIP PRODUCTION</p>
+            <h1>Bring your video<br><span>into the pipeline.</span></h1>
+            <p class="hero-copy">Upload an authorized source video, run local AI analysis, then render selected highlights as vertical MP4 clips with captions.</p>
+        </section>
+
+        <section class="panel upload-panel" aria-labelledby="upload-heading">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">SOURCE INPUT</p>
+                    <h2 id="upload-heading">Upload a video</h2>
+                </div>
+                <span class="file-limit">MAX 2048 MB</span>
+            </div>
+
+            <label class="dropzone" id="dropzone" for="video-file">
+                <input id="video-file" type="file" accept=".mp4,.mov,.m4v,.mkv,.webm,.avi,video/*">
+                <span class="upload-icon" aria-hidden="true">↑</span>
+                <strong id="file-prompt">Drop your video here</strong>
+                <span class="muted">or <u>browse files</u></span>
+                <span class="formats">MP4 · MOV · M4V · MKV · WEBM · AVI</span>
+            </label>
+
+            <div class="selected-file hidden" id="selected-file">
+                <div class="file-icon">MP4</div>
+                <div class="file-details">
+                    <strong id="selected-name">video.mp4</strong>
+                    <span id="selected-size" class="muted">0 MB</span>
+                </div>
+                <button class="text-button" type="button" id="remove-file">Remove</button>
+            </div>
+
+            <label class="rights-check">
+                <input id="rights-confirmed" type="checkbox">
+                <span>I own this video or have permission to edit and republish it on the selected platforms.</span>
+            </label>
+
+            <button class="primary-button" type="button" id="upload-button" disabled>
+                <span>Upload source video</span><span aria-hidden="true">→</span>
+            </button>
+
+            <div class="progress-wrap hidden" id="progress-wrap">
+                <div class="progress-label"><span id="progress-text">Uploading…</span><span id="progress-percent">0%</span></div>
+                <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+            </div>
+            <div class="notice hidden" id="notice" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="panel sources-panel">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">INGESTION LIBRARY</p>
+                    <h2>Recent source videos</h2>
+                </div>
+                <button class="text-button" type="button" id="refresh-button">Refresh ↻</button>
+            </div>
+            <div id="source-list" class="source-list">
+                <div class="empty-state">Loading your source library…</div>
+            </div>
+        </section>
+
+        <section class="panel analysis-panel hidden" id="analysis-panel" aria-live="polite">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">MILESTONE 02 / ANALYSIS</p>
+                    <h2 id="analysis-title">Video intelligence</h2>
+                </div>
+                <span class="status-pill" id="analysis-status">QUEUED</span>
+            </div>
+            <p class="analysis-message" id="analysis-message">Waiting for the local analysis worker…</p>
+            <div class="progress-track analysis-track"><div class="progress-fill" id="analysis-progress-fill"></div></div>
+            <div class="analysis-meta" id="analysis-meta"></div>
+            <div class="analysis-results hidden" id="analysis-results">
+                <div class="analysis-stats" id="analysis-stats"></div>
+                <h3>Suggested highlights</h3>
+                <div class="highlight-list" id="highlight-list"></div>
+                <p class="analysis-note" id="analysis-note"></p>
+                <div class="render-actions" id="render-actions">
+                    <button class="primary-button" type="button" id="generate-clips-button" disabled>
+                        <span>Generate vertical clips</span><span aria-hidden="true">→</span>
+                    </button>
+                    <p class="render-disclaimer">Creates H.264/AAC MP4 files at 1080 × 1920. Captions are burned in when speech is available. Landscape footage uses a centered crop in this first renderer.</p>
+                </div>
+                <div class="generated-clips hidden" id="generated-clips">
+                    <h3>Generated clips</h3>
+                    <div class="generated-clip-list" id="generated-clip-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel youtube-panel" aria-labelledby="youtube-heading">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">MILESTONE 04 / OFFICIAL API</p>
+                    <h2 id="youtube-heading">YouTube publishing</h2>
+                </div>
+                <span class="status-pill" id="youtube-connection-pill">NOT CONNECTED</span>
+            </div>
+            <p class="youtube-intro" id="youtube-connection-message">Connect a YouTube channel using Google's official OAuth consent screen. AutoClips AI never asks for or stores your Google password.</p>
+            <div class="youtube-connect-actions">
+                <button class="primary-button youtube-connect-button" type="button" id="youtube-connect-button">Connect YouTube account <span aria-hidden="true">→</span></button>
+                <button class="small-button hidden" type="button" id="youtube-disconnect-button">Disconnect local authorization</button>
+            </div>
+            <p class="youtube-setup-note" id="youtube-setup-note">Setup required: enable YouTube Data API v3 and place your OAuth Desktop-app JSON at <code>secrets/client_secret.json</code>, then restart AutoClips AI. Keep that file private and never send it to anyone.</p>
+            <div class="notice hidden" id="youtube-notice" role="status" aria-live="polite"></div>
+        </section>
+
+        <footer>
+            <span>AutoClips AI · Local-first build</span>
+            <span id="system-status">Checking system…</span>
+        </footer>
+    </main>
+    <script src="/app.js"></script>
+</body>
+</html>
