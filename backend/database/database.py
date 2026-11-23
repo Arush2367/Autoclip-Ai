@@ -179,6 +179,7 @@ def initialize_database() -> None:
                 status TEXT NOT NULL DEFAULT 'PENDING_CONNECTION',
                 progress INTEGER NOT NULL DEFAULT 0 CHECK (progress BETWEEN 0 AND 100),
                 caption TEXT NOT NULL DEFAULT '',
+                is_ai_generated INTEGER NOT NULL DEFAULT 0 CHECK (is_ai_generated IN (0, 1)),
                 published_media_id TEXT,
                 published_url TEXT,
                 error_message TEXT,
@@ -194,6 +195,13 @@ def initialize_database() -> None:
                 ON meta_publications(platform, status, updated_at DESC);
             CREATE INDEX IF NOT EXISTS idx_meta_publications_clip
                 ON meta_publications(clip_id, created_at DESC);
+
+            -- Short-lived OAuth state values are single-use and contain no credentials.
+            CREATE TABLE IF NOT EXISTS meta_oauth_states (
+                state TEXT PRIMARY KEY,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
             """
         )
 
@@ -269,6 +277,12 @@ def initialize_database() -> None:
             """INSERT OR IGNORE INTO meta_connections
                (platform, status, created_at, updated_at)
                VALUES ('facebook', 'NOT_CONNECTED', datetime('now'), datetime('now'))"""
+        )
+
+        _ensure_columns(
+            connection,
+            "meta_publications",
+            {"is_ai_generated": "INTEGER NOT NULL DEFAULT 0 CHECK (is_ai_generated IN (0, 1))"},
         )
 
         # Backfill timestamps for rows from schemas that did not track updates.

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 from typing import Callable, Iterable
 
 from backend.config import YOUTUBE_CHANNEL_FILE, YOUTUBE_CLIENT_SECRETS_FILE, YOUTUBE_TOKEN_FILE
+from backend.services.secure_storage import load_secure_json, save_secure_json
 
 YOUTUBE_UPLOAD_SCOPE = "https://www.googleapis.com/auth/youtube.upload"
 YOUTUBE_READONLY_SCOPE = "https://www.googleapis.com/auth/youtube.readonly"
@@ -39,7 +39,7 @@ def connection_status() -> dict:
         try:
             credentials = _load_credentials(refresh=False)
             connected = bool(credentials and (credentials.valid or credentials.refresh_token))
-        except Exception as exc:  # Status must never expose token or secret contents.
+        except Exception:  # Status must never expose token or secret contents.
             token_error = "Saved YouTube authorization needs to be reconnected."
 
     channel = _load_cached_channel()
@@ -69,9 +69,10 @@ def _load_credentials(refresh: bool = True):
     from google.oauth2.credentials import Credentials
 
     try:
-        credentials = Credentials.from_authorized_user_file(
-            str(YOUTUBE_TOKEN_FILE), YOUTUBE_SCOPES
-        )
+        token_data = load_secure_json(YOUTUBE_TOKEN_FILE)
+        if not isinstance(token_data, dict):
+            raise ValueError("Unexpected credential format")
+        credentials = Credentials.from_authorized_user_info(token_data, YOUTUBE_SCOPES)
     except Exception as exc:
         raise YouTubePublisherError(
             "The saved YouTube authorization is unreadable. Disconnect and connect again."
@@ -93,10 +94,11 @@ def _load_credentials(refresh: bool = True):
 
 
 def _save_credentials(credentials) -> None:
-    YOUTUBE_TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
-    temporary = YOUTUBE_TOKEN_FILE.with_suffix(".tmp")
-    temporary.write_text(credentials.to_json(), encoding="utf-8")
-    os.replace(temporary, YOUTUBE_TOKEN_FILE)
+    try:
+        # DPAPI-encrypted on Windows; owner-only file permissions on POSIX.
+        save_secure_json(YOUTUBE_TOKEN_FILE, json.loads(credentials.to_json()))
+    except Exception as exc:
+        raise YouTubePublisherError("Could not securely save the YouTube authorization file.") from exc
 
 
 def connect_youtube() -> dict:
@@ -174,7 +176,7 @@ def _save_cached_channel(channel: dict) -> None:
     YOUTUBE_CHANNEL_FILE.parent.mkdir(parents=True, exist_ok=True)
     temporary = YOUTUBE_CHANNEL_FILE.with_suffix(".tmp")
     temporary.write_text(json.dumps(channel, ensure_ascii=False), encoding="utf-8")
-    os.replace(temporary, YOUTUBE_CHANNEL_FILE)
+    temporary.replace(YOUTUBE_CHANNEL_FILE)
 
 
 def _build_service(credentials):
@@ -212,10 +214,7 @@ def build_video_body(
     if privacy_status not in {"private", "unlisted", "public"}:
         raise YouTubePublisherError("Choose Private, Unlisted or Public visibility.")
 
-    snippet = {
-        "title": title,
-        "description": description or "",
-    }
+    snippet = {"title": title, "description": description or ""}
     clean_tags = [tag.strip() for tag in tags if tag and tag.strip()]
     if clean_tags:
         snippet["tags"] = clean_tags

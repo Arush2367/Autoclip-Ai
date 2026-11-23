@@ -6,6 +6,8 @@ import shutil
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 
+from backend.security import LocalOnlySecurityMiddleware
+
 from backend.api.analysis import router as analysis_router
 from backend.api.clips import router as clips_router
 from backend.api.meta import router as meta_router
@@ -16,12 +18,17 @@ from backend.database.database import database_connection, initialize_database
 
 app = FastAPI(
     title="AutoClips AI",
-    version="0.5.0",
+    version="0.6.1",
     description=(
         "Local-first video ingestion, AI analysis, vertical clip rendering, "
-        "YouTube publishing, and prepared Instagram/Facebook Reels integration."
+        "YouTube publishing, and Instagram/Facebook Reels publishing."
     ),
 )
+
+# This is a local desktop application, not an internet-facing service. Enforce
+# loopback clients and same-origin browser requests even if Uvicorn is started
+# manually with an unsafe --host value.
+app.add_middleware(LocalOnlySecurityMiddleware)
 
 
 @app.on_event("startup")

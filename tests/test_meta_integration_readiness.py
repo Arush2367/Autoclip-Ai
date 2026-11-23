@@ -5,17 +5,22 @@ from unittest.mock import patch
 
 from backend.database import database as database_module
 from backend.api import meta as meta_api
+from backend.services import meta_publisher
 
 
 class MetaIntegrationReadinessTests(unittest.TestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.database_path = Path(self.temp_dir.name) / "autoclips.sqlite3"
+        self.token_path = Path(self.temp_dir.name) / "meta_auth.json"
         self.database_patch = patch.object(database_module, "DATABASE_PATH", self.database_path)
+        self.token_patch = patch.object(meta_publisher, "META_TOKEN_FILE", self.token_path)
         self.database_patch.start()
+        self.token_patch.start()
         database_module.initialize_database()
 
     def tearDown(self):
+        self.token_patch.stop()
         self.database_patch.stop()
         self.temp_dir.cleanup()
 
@@ -23,57 +28,42 @@ class MetaIntegrationReadinessTests(unittest.TestCase):
         with database_module.database_connection() as connection:
             tables = {
                 row["name"]
-                for row in connection.execute(
-                    "SELECT name FROM sqlite_master WHERE type = 'table'"
-                ).fetchall()
+                for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'").fetchall()
             }
-            connections = connection.execute(
-                "SELECT platform, status FROM meta_connections ORDER BY platform"
-            ).fetchall()
-            publication_columns = {
-                row["name"] for row in connection.execute(
-                    "PRAGMA table_info(meta_publications)"
-                ).fetchall()
-            }
+            connections = connection.execute("SELECT platform, status FROM meta_connections ORDER BY platform").fetchall()
+            publication_columns = {row["name"] for row in connection.execute("PRAGMA table_info(meta_publications)")}
 
         self.assertIn("meta_connections", tables)
         self.assertIn("meta_publications", tables)
-        self.assertEqual(
-            [(row["platform"], row["status"]) for row in connections],
-            [("facebook", "NOT_CONNECTED"), ("instagram", "NOT_CONNECTED")],
-        )
+        self.assertEqual([(row["platform"], row["status"]) for row in connections],
+                         [("facebook", "NOT_CONNECTED"), ("instagram", "NOT_CONNECTED")])
         self.assertNotIn("access_token", publication_columns)
         self.assertNotIn("app_secret", publication_columns)
+        self.assertIn("is_ai_generated", publication_columns)
+        self.assertIn("meta_oauth_states", tables)
 
     def test_initialize_is_idempotent_for_meta_connection_rows(self):
         database_module.initialize_database()
         database_module.initialize_database()
         with database_module.database_connection() as connection:
-            count = connection.execute(
-                "SELECT COUNT(*) FROM meta_connections"
-            ).fetchone()[0]
+            count = connection.execute("SELECT COUNT(*) FROM meta_connections").fetchone()[0]
         self.assertEqual(count, 2)
 
-    def test_status_reports_prepared_but_not_connected_or_publish_enabled(self):
-        with patch.object(
-            meta_api,
-            "configuration_status",
-            return_value={
-                "app_id_configured": False,
-                "app_secret_configured": False,
-                "graph_api_version_configured": False,
-                "credentials_configured": False,
-                "api_calls_enabled": False,
-            },
-        ):
-            result = meta_api.get_meta_status()
-
+    def test_status_reports_both_platforms_disconnected_without_tokens(self):
+        result = meta_api.get_meta_status()
         self.assertTrue(result["integration_ready"])
-        self.assertFalse(result["connection_flow_implemented"])
+        self.assertTrue(result["connection_flow_implemented"])
         self.assertFalse(result["publishing_enabled"])
         self.assertFalse(result["platforms"]["instagram"]["connected"])
         self.assertFalse(result["platforms"]["facebook"]["connected"])
-        self.assertFalse(result["credentials"]["api_calls_enabled"])
+        self.assertFalse(result["credentials"]["instagram_token_saved"])
+        self.assertFalse(result["credentials"]["facebook_page_token_saved"])
+
+    def test_meta_connect_credentials_are_secret_values(self):
+        secret = "private-test-token"
+        payload = meta_api.MetaConnectRequest(instagram_access_token=secret)
+        self.assertNotIn(secret, repr(payload))
+        self.assertEqual(payload.instagram_access_token.get_secret_value(), secret)
 
 
 if __name__ == "__main__":

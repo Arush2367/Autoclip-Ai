@@ -1,13 +1,64 @@
 .venv/
 __pycache__/
 *.py[cod]
-.env
-storage/*
-!storage/.gitkeep
 .pytest_cache/
 
-# OAuth credentials and tokens must never be committed.
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
 /secrets/
 storage/secrets/
 client_secret*.json
 token*.json
+*token*.json
+*.pem
+*.key
+
+# Local media, databases and generated output
+storage/*
+!storage/.gitkeep
+*.sqlite
+*.sqlite3
+*.db
+*.log
+
+# AUTOCLIPS LOCAL/PRIVATE DATA - DO NOT COMMIT
+.env
+.env.*
+!.env.example
+!.env.template
+
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local videos, databases, models and generated data
+/storage/*
+!/storage/.gitkeep
+
+# OAuth credentials and tokens
+/secrets/
+**/secrets/
+**/client_secret*.json
+**/token*.json
+**/*token*.json
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local databases and logs
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+*.log
